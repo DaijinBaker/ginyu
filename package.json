@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/LordNahi/ginyu#readme",
   "scripts": {
-    "android": "react-native run-android",
+    "android": "react-native run-android --port 8082",
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",

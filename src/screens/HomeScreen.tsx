@@ -21,20 +21,12 @@ export default function HomeScreen() {
           <Text style={styles.primaryButtonText}>START</Text>
         </TouchableOpacity>
 
-        <View style={styles.secondaryRow}>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.navigate('History')}
-            activeOpacity={0.8}>
-            <Text style={styles.secondaryButtonText}>History</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => navigation.navigate('Settings')}
-            activeOpacity={0.8}>
-            <Text style={styles.secondaryButtonText}>Settings</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={() => navigation.navigate('Settings')}
+          activeOpacity={0.8}>
+          <Text style={styles.secondaryButtonText}>Settings</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -66,12 +58,7 @@ const styles = StyleSheet.create({
     ...Typography.h2,
     letterSpacing: 4,
   },
-  secondaryRow: {
-    flexDirection: 'row',
-    gap: Spacing.md,
-  },
   secondaryButton: {
-    flex: 1,
     borderWidth: 1,
     borderColor: Colors.grey600,
     borderRadius: 8,
