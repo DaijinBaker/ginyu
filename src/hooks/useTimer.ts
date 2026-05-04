@@ -37,7 +37,7 @@ export function useTimer() {
     if (!timer.isRunning) return;
 
     const interval = setInterval(() => {
-      dispatch(tick());
+      dispatch(tick(Date.now()));
     }, 1000);
 
     return () => clearInterval(interval);
@@ -52,14 +52,14 @@ export function useTimer() {
       timer.phase !== 'idle' &&
       timer.phase !== 'complete'
     ) {
-      dispatch(advancePhase(configRef.current));
+      dispatch(advancePhase({...configRef.current, now: Date.now()}));
     }
   }, [timer.secondsRemaining, timer.isRunning, timer.phase, dispatch]);
 
   // ── Controls ──────────────────────────────────────────────────────────────
-  const handleStart = () => dispatch(startSession(configRef.current));
+  const handleStart = () => dispatch(startSession({...configRef.current, now: Date.now()}));
   const handlePause = () => dispatch(pause());
-  const handleResume = () => dispatch(resume());
+  const handleResume = () => dispatch(resume(Date.now()));
   const handleReset = () => dispatch(reset());
 
   const handleToggleRunning = () => {

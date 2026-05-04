@@ -5,7 +5,6 @@ import type {RootStackParamList} from './types';
 
 import HomeScreen from '../screens/HomeScreen';
 import TimerScreen from '../screens/TimerScreen';
-import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -30,7 +29,6 @@ export default function RootNavigator() {
         component={TimerScreen}
         options={{title: '', headerTransparent: true}}
       />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
     </Stack.Navigator>
   );
 }

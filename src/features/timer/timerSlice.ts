@@ -16,6 +16,8 @@ export interface TimerState {
   isRunning: boolean;
   /** Unix timestamp (ms) when the current phase started, used for drift correction */
   phaseStartedAt: number | null;
+  /** Total duration in seconds of the current phase, used for drift correction */
+  totalPhaseDuration: number;
 }
 
 const initialState: TimerState = {
@@ -25,6 +27,7 @@ const initialState: TimerState = {
   totalRounds: 0,
   isRunning: false,
   phaseStartedAt: null,
+  totalPhaseDuration: 0,
 };
 
 const timerSlice = createSlice({
@@ -32,56 +35,63 @@ const timerSlice = createSlice({
   initialState,
   reducers: {
     /** Load session config and transition to prep phase */
-    startSession(state, action: PayloadAction<SessionConfig>) {
-      const {prepDuration, rounds} = action.payload;
+    startSession(state, action: PayloadAction<SessionConfig & {now: number}>) {
+      const {prepDuration, rounds, now} = action.payload;
       state.phase = 'prep';
       state.secondsRemaining = prepDuration;
+      state.totalPhaseDuration = prepDuration;
       state.currentRound = 0;
       state.totalRounds = rounds;
       state.isRunning = true;
-      state.phaseStartedAt = Date.now();
+      state.phaseStartedAt = now;
     },
-    tick(state) {
-      if (!state.isRunning || state.secondsRemaining <= 0) return;
-      state.secondsRemaining -= 1;
+    tick(state, action: PayloadAction<number>) {
+      if (!state.isRunning || state.phaseStartedAt === null) return;
+      const elapsed = Math.floor((action.payload - state.phaseStartedAt) / 1000);
+      state.secondsRemaining = Math.max(0, state.totalPhaseDuration - elapsed);
     },
     /** Advance to the next phase — called when secondsRemaining reaches 0 */
-    advancePhase(state, action: PayloadAction<SessionConfig>) {
-      const {roundDuration, restDuration, rounds} = action.payload;
+    advancePhase(state, action: PayloadAction<SessionConfig & {now: number}>) {
+      const {roundDuration, restDuration, rounds, now} = action.payload;
 
       switch (state.phase) {
         case 'prep':
           state.phase = 'work';
           state.currentRound = 1;
           state.secondsRemaining = roundDuration;
+          state.totalPhaseDuration = roundDuration;
           break;
         case 'work':
           if (state.currentRound >= rounds) {
             state.phase = 'complete';
             state.isRunning = false;
             state.secondsRemaining = 0;
+            state.totalPhaseDuration = 0;
           } else {
             state.phase = 'rest';
             state.secondsRemaining = restDuration;
+            state.totalPhaseDuration = restDuration;
           }
           break;
         case 'rest':
           state.phase = 'work';
           state.currentRound += 1;
           state.secondsRemaining = roundDuration;
+          state.totalPhaseDuration = roundDuration;
           break;
         default:
           break;
       }
-      state.phaseStartedAt = Date.now();
+      state.phaseStartedAt = now;
     },
     pause(state) {
       state.isRunning = false;
     },
-    resume(state) {
+    resume(state, action: PayloadAction<number>) {
       if (state.phase !== 'idle' && state.phase !== 'complete') {
         state.isRunning = true;
-        state.phaseStartedAt = Date.now();
+        state.phaseStartedAt = action.payload;
+        state.totalPhaseDuration = state.secondsRemaining;
       }
     },
     reset() {
