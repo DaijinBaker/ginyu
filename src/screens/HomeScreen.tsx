@@ -4,6 +4,7 @@ import {useNavigation} from '@react-navigation/native';
 import {Colors, Spacing, Typography} from '../constants';
 import {useAppDispatch, useAppSelector} from '../hooks/useAppStore';
 import {updateConfig, SessionConfig} from '../features/session/sessionSlice';
+import {startSession} from '../features/timer/timerSlice';
 
 interface StepperRowProps {
   label: string;
@@ -69,6 +70,11 @@ export default function HomeScreen() {
     dispatch(updateConfig(partial));
   }
 
+  function handleStart() {
+    dispatch(startSession({...config, now: Date.now()}));
+    navigation.navigate('Timer');
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -132,7 +138,7 @@ export default function HomeScreen() {
 
       <TouchableOpacity
         style={styles.primaryButton}
-        onPress={() => navigation.navigate('Timer')}
+        onPress={handleStart}
         activeOpacity={0.8}>
         <Text style={styles.primaryButtonText}>START</Text>
       </TouchableOpacity>
