@@ -1,82 +1,62 @@
 import React from 'react';
-import {Pressable, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {Colors, Spacing, Typography} from '../constants';
 import {useAppDispatch, useAppSelector} from '../hooks/useAppStore';
-import {updateConfig, SessionConfig} from '../features/session/sessionSlice';
-import {startSession} from '../features/timer/timerSlice';
+import {updateConfig, resetConfig} from '../features/session/sessionSlice';
+import type {SessionConfig} from '../features/session/sessionSlice';
+import {Colors, Spacing, Typography} from '../constants';
 
-interface StepperRowProps {
+function formatValue(key: keyof SessionConfig, value: number): string {
+  if (key === 'rounds') {
+    return String(value);
+  }
+  if (value < 60) {
+    return `${value}s`;
+  }
+  const m = Math.floor(value / 60);
+  const s = value % 60;
+  return s === 0 ? `${m}:00` : `${m}:${String(s).padStart(2, '0')}`;
+}
+
+interface SettingItem {
+  key: keyof SessionConfig;
   label: string;
-  value: number;
-  suffix?: string;
   step: number;
   min: number;
   max: number;
-  onDecrement: () => void;
-  onIncrement: () => void;
 }
 
-function StepperRow({
-  label,
-  value,
-  suffix = '',
-  onDecrement,
-  onIncrement,
-  min,
-  max,
-}: StepperRowProps) {
-  return (
-    <View style={styles.row}>
-      <Text style={Typography.bodySmall}>{label}</Text>
-      <View style={styles.stepper}>
-        <Pressable
-          style={({pressed}) => [
-            styles.stepBtn,
-            pressed && styles.stepBtnPressed,
-            value <= min && styles.stepBtnDisabled,
-          ]}
-          onPress={onDecrement}
-          disabled={value <= min}
-          hitSlop={8}>
-          <Text style={styles.stepBtnText}>−</Text>
-        </Pressable>
-        <Text style={[Typography.body, styles.stepValue]}>
-          {value}
-          {suffix}
-        </Text>
-        <Pressable
-          style={({pressed}) => [
-            styles.stepBtn,
-            pressed && styles.stepBtnPressed,
-            value >= max && styles.stepBtnDisabled,
-          ]}
-          onPress={onIncrement}
-          disabled={value >= max}
-          hitSlop={8}>
-          <Text style={styles.stepBtnText}>+</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
+const SETTINGS: SettingItem[] = [
+  {key: 'rounds', label: 'ROUNDS', step: 1, min: 1, max: 20},
+  {key: 'roundDuration', label: 'ROUND', step: 30, min: 30, max: 600},
+  {key: 'restDuration', label: 'REST', step: 15, min: 0, max: 300},
+  {key: 'prepDuration', label: 'PREP', step: 5, min: 0, max: 60},
+  {key: 'warningTime', label: 'WARNING', step: 5, min: 0, max: 60},
+];
 
 export default function HomeScreen() {
   const navigation = useNavigation();
-  const config = useAppSelector(state => state.session.config);
   const dispatch = useAppDispatch();
+  const config = useAppSelector(state => state.session.config);
 
-  function patch(partial: Partial<SessionConfig>) {
-    dispatch(updateConfig(partial));
-  }
-
-  function handleStart() {
-    dispatch(startSession({...config, now: Date.now()}));
-    navigation.navigate('Timer');
-  }
+  const adjust = (
+    key: keyof SessionConfig,
+    delta: number,
+    min: number,
+    max: number,
+  ) => {
+    const next = Math.min(max, Math.max(min, config[key] + delta));
+    dispatch(updateConfig({[key]: next}));
+  };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={Typography.h1}>GINYU</Text>
         <Text style={[Typography.label, styles.subtitle]}>
@@ -84,65 +64,44 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      <View style={styles.settings}>
-        <StepperRow
-          label="Rounds"
-          value={config.rounds}
-          step={1}
-          min={1}
-          max={20}
-          onDecrement={() => patch({rounds: config.rounds - 1})}
-          onIncrement={() => patch({rounds: config.rounds + 1})}
-        />
-        <StepperRow
-          label="Round duration"
-          value={config.roundDuration}
-          suffix="s"
-          step={5}
-          min={5}
-          max={600}
-          onDecrement={() => patch({roundDuration: config.roundDuration - 5})}
-          onIncrement={() => patch({roundDuration: config.roundDuration + 5})}
-        />
-        <StepperRow
-          label="Rest duration"
-          value={config.restDuration}
-          suffix="s"
-          step={5}
-          min={0}
-          max={300}
-          onDecrement={() => patch({restDuration: config.restDuration - 5})}
-          onIncrement={() => patch({restDuration: config.restDuration + 5})}
-        />
-        <StepperRow
-          label="Prep time"
-          value={config.prepDuration}
-          suffix="s"
-          step={5}
-          min={0}
-          max={60}
-          onDecrement={() => patch({prepDuration: config.prepDuration - 5})}
-          onIncrement={() => patch({prepDuration: config.prepDuration + 5})}
-        />
-        <StepperRow
-          label="Warning time"
-          value={config.warningTime}
-          suffix="s"
-          step={1}
-          min={0}
-          max={60}
-          onDecrement={() => patch({warningTime: config.warningTime - 1})}
-          onIncrement={() => patch({warningTime: config.warningTime + 1})}
-        />
+      <View style={styles.cards}>
+        {SETTINGS.map(({key, label, step, min, max}) => (
+          <View key={key} style={styles.card}>
+            <Text style={styles.cardLabel}>{label}</Text>
+            <Text style={styles.cardValue}>{formatValue(key, config[key])}</Text>
+            <View style={styles.stepper}>
+              <TouchableOpacity
+                style={styles.stepBtn}
+                onPress={() => adjust(key, -step, min, max)}
+                activeOpacity={0.7}>
+                <Text style={styles.stepText}>−</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.stepBtn}
+                onPress={() => adjust(key, step, min, max)}
+                activeOpacity={0.7}>
+                <Text style={styles.stepText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
       </View>
 
-      <TouchableOpacity
-        style={styles.primaryButton}
-        onPress={handleStart}
-        activeOpacity={0.8}>
-        <Text style={styles.primaryButtonText}>START</Text>
-      </TouchableOpacity>
-    </View>
+      <View style={styles.actions}>
+        <TouchableOpacity
+          style={styles.primaryButton}
+          onPress={() => navigation.navigate('Timer')}
+          activeOpacity={0.8}>
+          <Text style={styles.primaryButtonText}>START</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.resetBtn}
+          onPress={() => dispatch(resetConfig())}
+          activeOpacity={0.7}>
+          <Text style={styles.resetText}>RESET TO DEFAULTS</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -150,55 +109,64 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.black,
-    padding: Spacing.xl,
-    justifyContent: 'space-between',
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.lg,
   },
   header: {
     alignItems: 'center',
     paddingTop: Spacing.xl,
+    paddingBottom: Spacing.lg,
   },
   subtitle: {
     marginTop: Spacing.xs,
   },
-  settings: {
-    width: '100%',
+  cards: {
+    flex: 1,
+    justifyContent: 'space-evenly',
   },
-  row: {
+  card: {
+    backgroundColor: Colors.grey800,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.grey600,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.grey800,
+    justifyContent: 'space-between',
+  },
+  cardLabel: {
+    ...Typography.label,
+    flex: 1,
+  },
+  cardValue: {
+    ...Typography.h3,
+    flex: 1,
+    textAlign: 'center',
   },
   stepper: {
+    flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: Spacing.sm,
   },
   stepBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.grey800,
+    width: 44,
+    height: 44,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.grey600,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: Colors.grey800,
   },
-  stepBtnPressed: {
-    backgroundColor: Colors.grey600,
+  stepText: {
+    ...Typography.h3,
+    lineHeight: 28,
   },
-  stepBtnDisabled: {
-    opacity: 0.3,
-  },
-  stepBtnText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.white,
-    lineHeight: 22,
-  },
-  stepValue: {
-    minWidth: 52,
-    textAlign: 'center',
+  actions: {
+    gap: Spacing.md,
+    paddingTop: Spacing.md,
   },
   primaryButton: {
     backgroundColor: Colors.primary,
@@ -209,5 +177,15 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     ...Typography.h2,
     letterSpacing: 4,
+  },
+  resetBtn: {
+    borderWidth: 1,
+    borderColor: Colors.grey600,
+    borderRadius: 8,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+  },
+  resetText: {
+    ...Typography.label,
   },
 });

@@ -29,6 +29,8 @@
     "react-native": "0.85.1",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.13.1",
+    "react-native-sound": "^0.13.0",
+    "react-native-svg": "^15.15.4",
     "react-redux": "^9.2.0"
   },
   "devDependencies": {

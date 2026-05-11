@@ -5,6 +5,7 @@ import {Colors, Spacing, Typography} from '../constants';
 import {useTimer} from '../hooks/useTimer';
 import {formatTime} from '../utils/formatTime';
 import type {TimerPhase} from '../features/timer/timerSlice';
+import CountdownRing from '../components/CountdownRing';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -82,16 +83,18 @@ export default function TimerScreen() {
           </View>
         ) : (
           <View style={styles.centerBlock}>
-            <Text style={[styles.phaseLabel, {color: accentColor}]}>
-              {getPhaseLabel(phase)}
-            </Text>
             {(phase === 'work' || phase === 'rest') && (
               <Text style={styles.roundText}>
                 {currentRound}
                 <Text style={styles.roundTotal}> / {totalRounds}</Text>
               </Text>
             )}
-            <Text style={styles.countdown}>{formatTime(secondsRemaining)}</Text>
+            <CountdownRing
+              secondsRemaining={secondsRemaining}
+              totalPhaseDuration={timer.totalPhaseDuration}
+              color={accentColor}
+              label={getPhaseLabel(phase)}
+            />
           </View>
         )}
         </View>

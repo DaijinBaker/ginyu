@@ -1,0 +1,95 @@
+import React from 'react';
+import {StyleSheet, Text, View} from 'react-native';
+import Svg, {Circle} from 'react-native-svg';
+import {Colors} from '../constants';
+
+const SIZE = 280;
+const STROKE_WIDTH = 16;
+const RADIUS = (SIZE - STROKE_WIDTH) / 2;
+const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+const CENTER = SIZE / 2;
+
+interface Props {
+  secondsRemaining: number;
+  totalPhaseDuration: number;
+  color: string;
+  label: string;
+}
+
+export default function CountdownRing({
+  secondsRemaining,
+  totalPhaseDuration,
+  color,
+  label,
+}: Props) {
+  const progress =
+    totalPhaseDuration > 0 ? secondsRemaining / totalPhaseDuration : 1;
+  const dashOffset = CIRCUMFERENCE * (1 - progress);
+
+  const minutes = Math.floor(secondsRemaining / 60);
+  const seconds = secondsRemaining % 60;
+  const timeText = `${minutes}:${String(seconds).padStart(2, '0')}`;
+
+  return (
+    <View style={styles.wrapper}>
+      <Svg width={SIZE} height={SIZE}>
+        {/* Background track */}
+        <Circle
+          cx={CENTER}
+          cy={CENTER}
+          r={RADIUS}
+          stroke={Colors.grey800}
+          strokeWidth={STROKE_WIDTH}
+          fill="none"
+        />
+        {/* Foreground arc — rotated so it starts at 12 o'clock */}
+        <Circle
+          cx={CENTER}
+          cy={CENTER}
+          r={RADIUS}
+          stroke={color}
+          strokeWidth={STROKE_WIDTH}
+          fill="none"
+          strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+          strokeDashoffset={dashOffset}
+          strokeLinecap="round"
+          rotation="-90"
+          origin={`${CENTER}, ${CENTER}`}
+        />
+      </Svg>
+
+      {/* Text centred inside the ring */}
+      <View style={styles.textWrapper}>
+        <Text style={[styles.label, {color}]}>{label}</Text>
+        <Text style={styles.time}>{timeText}</Text>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrapper: {
+    width: SIZE,
+    height: SIZE,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textWrapper: {
+    position: 'absolute',
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: 12,
+    fontWeight: '500',
+    letterSpacing: 3,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  time: {
+    fontSize: 72,
+    fontWeight: '700',
+    color: Colors.white,
+    letterSpacing: -2,
+    lineHeight: 80,
+  },
+});

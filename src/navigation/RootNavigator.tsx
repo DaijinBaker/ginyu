@@ -29,6 +29,7 @@ export default function RootNavigator() {
         component={TimerScreen}
         options={{title: '', headerTransparent: true}}
       />
+
     </Stack.Navigator>
   );
 }
