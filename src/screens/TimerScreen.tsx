@@ -48,8 +48,8 @@ export default function TimerScreen() {
   const {phase, secondsRemaining, currentRound, totalRounds, isRunning} = timer;
 
   const accentColor = getPhaseColor(phase, secondsRemaining, config.warningTime);
-  const isIdle = phase === 'idle';
   const isComplete = phase === 'complete';
+  const isIdle = phase === 'idle';
 
   return (
     <View style={styles.container}>
@@ -61,17 +61,7 @@ export default function TimerScreen() {
 
         {/* Centre block — flex:1 so it fills available space and centres its content */}
         <View style={styles.centerWrapper}>
-        {isIdle ? (
-          <View style={styles.idleContainer}>
-            <Text style={styles.idleTitle}>GINYU</Text>
-            <Text style={Typography.bodySmall}>
-              {config.rounds} rounds ·{' '}
-              {Math.floor(config.roundDuration / 60)}:
-              {String(config.roundDuration % 60).padStart(2, '0')} work ·{' '}
-              {config.restDuration}s rest
-            </Text>
-          </View>
-        ) : isComplete ? (
+        {isComplete ? (
           <View style={styles.completeContainer}>
             <Text style={styles.completeIcon}>🥊</Text>
             <Text style={[styles.phaseLabel, {color: accentColor}]}>
@@ -91,7 +81,7 @@ export default function TimerScreen() {
             )}
             <CountdownRing
               secondsRemaining={secondsRemaining}
-              totalPhaseDuration={timer.totalPhaseDuration}
+              totalPhaseDuration={timer.originalPhaseDuration}
               color={accentColor}
               label={getPhaseLabel(phase)}
             />
@@ -101,7 +91,7 @@ export default function TimerScreen() {
 
         {/* Controls */}
         <View style={styles.controls}>
-          {/* Primary action: Start / Pause / Resume / Again */}
+          {/* Primary action: Start / Pause / Resume / Go Again */}
           <TouchableOpacity
             style={[styles.primaryButton, {backgroundColor: accentColor}]}
             onPress={handleToggleRunning}
@@ -117,7 +107,7 @@ export default function TimerScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Reset — shown whenever a session has been started */}
+          {/* Reset — shown while a session is active */}
           {!isIdle && (
             <TouchableOpacity
               style={styles.secondaryButton}
@@ -129,8 +119,8 @@ export default function TimerScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Back to home — shown on idle or complete */}
-          {(isIdle || isComplete) && (
+          {/* Back to home — shown after reset or on complete */}
+          {(isComplete || isIdle) && (
             <TouchableOpacity
               style={styles.secondaryButton}
               onPress={() => {
@@ -206,7 +196,7 @@ const styles = StyleSheet.create({
     lineHeight: 120,
   },
 
-  // Idle state
+  // Idle state (unused — kept for style completeness)
   idleContainer: {
     alignItems: 'center',
     gap: Spacing.sm,
