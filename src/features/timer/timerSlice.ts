@@ -18,6 +18,8 @@ export interface TimerState {
   phaseStartedAt: number | null;
   /** Total duration in seconds of the current phase, used for drift correction */
   totalPhaseDuration: number;
+  /** Full duration of the current phase at the moment it began — never mutated on pause/resume */
+  originalPhaseDuration: number;
 }
 
 const initialState: TimerState = {
@@ -28,6 +30,7 @@ const initialState: TimerState = {
   isRunning: false,
   phaseStartedAt: null,
   totalPhaseDuration: 0,
+  originalPhaseDuration: 0,
 };
 
 const timerSlice = createSlice({
@@ -40,6 +43,7 @@ const timerSlice = createSlice({
       state.phase = 'prep';
       state.secondsRemaining = prepDuration;
       state.totalPhaseDuration = prepDuration;
+      state.originalPhaseDuration = prepDuration;
       state.currentRound = 0;
       state.totalRounds = rounds;
       state.isRunning = true;
@@ -60,6 +64,7 @@ const timerSlice = createSlice({
           state.currentRound = 1;
           state.secondsRemaining = roundDuration;
           state.totalPhaseDuration = roundDuration;
+          state.originalPhaseDuration = roundDuration;
           break;
         case 'work':
           if (state.currentRound >= rounds) {
@@ -67,10 +72,12 @@ const timerSlice = createSlice({
             state.isRunning = false;
             state.secondsRemaining = 0;
             state.totalPhaseDuration = 0;
+            state.originalPhaseDuration = 0;
           } else {
             state.phase = 'rest';
             state.secondsRemaining = restDuration;
             state.totalPhaseDuration = restDuration;
+            state.originalPhaseDuration = restDuration;
           }
           break;
         case 'rest':
@@ -78,6 +85,7 @@ const timerSlice = createSlice({
           state.currentRound += 1;
           state.secondsRemaining = roundDuration;
           state.totalPhaseDuration = roundDuration;
+          state.originalPhaseDuration = roundDuration;
           break;
         default:
           break;

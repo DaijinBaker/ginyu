@@ -1,16 +1,16 @@
 export const Colors = {
   // Brand
-  primary: '#E8360A',
-  primaryDark: '#B82908',
+  primary: '#0038a8',
+  primaryDark: '#002880',
 
   // Neutrals
-  black: '#0A0A0A',
+  black: '#0a0e1a',
   white: '#FFFFFF',
   grey100: '#F5F5F5',
   grey200: '#E0E0E0',
-  grey400: '#9E9E9E',
-  grey600: '#616161',
-  grey800: '#212121',
+  grey400: '#5577aa',
+  grey600: '#1e3a5f',
+  grey800: '#111827',
 
   // Semantic
   success: '#2ECC71',
@@ -18,7 +18,7 @@ export const Colors = {
   danger: '#E74C3C',
 
   // Timer states
-  timerWork: '#E8360A',
+  timerWork: '#0038a8',
   timerRest: '#2ECC71',
   timerWarning: '#F39C12',
 } as const;

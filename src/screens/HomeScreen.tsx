@@ -9,6 +9,7 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {useAppDispatch, useAppSelector} from '../hooks/useAppStore';
 import {updateConfig, resetConfig} from '../features/session/sessionSlice';
+import {startSession} from '../features/timer/timerSlice';
 import type {SessionConfig} from '../features/session/sessionSlice';
 import {Colors, Spacing, Typography} from '../constants';
 
@@ -90,7 +91,10 @@ export default function HomeScreen() {
       <View style={styles.actions}>
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() => navigation.navigate('Timer')}
+          onPress={() => {
+            dispatch(startSession({...config, now: Date.now()}));
+            navigation.navigate('Timer');
+          }}
           activeOpacity={0.8}>
           <Text style={styles.primaryButtonText}>START</Text>
         </TouchableOpacity>

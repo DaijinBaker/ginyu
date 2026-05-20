@@ -1,11 +1,14 @@
-import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import React, {useEffect, useRef} from 'react';
+import {Animated, StyleSheet, Text, View} from 'react-native';
 import Svg, {Circle} from 'react-native-svg';
 import {Colors} from '../constants';
 
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
 const SIZE = 280;
 const STROKE_WIDTH = 16;
-const RADIUS = (SIZE - STROKE_WIDTH) / 2;
+const GLOW_STROKE_WIDTH = STROKE_WIDTH + 14;
+const RADIUS = (SIZE - GLOW_STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const CENTER = SIZE / 2;
 
@@ -30,6 +33,27 @@ export default function CountdownRing({
   const seconds = secondsRemaining % 60;
   const timeText = `${minutes}:${String(seconds).padStart(2, '0')}`;
 
+  const glowAnim = useRef(new Animated.Value(0.25)).current;
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 0.6,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0.15,
+          duration: 900,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [glowAnim]);
+
   return (
     <View style={styles.wrapper}>
       <Svg width={SIZE} height={SIZE}>
@@ -41,6 +65,21 @@ export default function CountdownRing({
           stroke={Colors.grey800}
           strokeWidth={STROKE_WIDTH}
           fill="none"
+        />
+        {/* Glow arc — wider, pulsing opacity */}
+        <AnimatedCircle
+          cx={CENTER}
+          cy={CENTER}
+          r={RADIUS}
+          stroke={color}
+          strokeWidth={GLOW_STROKE_WIDTH}
+          fill="none"
+          strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
+          strokeDashoffset={dashOffset}
+          strokeLinecap="round"
+          rotation="-90"
+          origin={`${CENTER}, ${CENTER}`}
+          opacity={glowAnim}
         />
         {/* Foreground arc — rotated so it starts at 12 o'clock */}
         <Circle

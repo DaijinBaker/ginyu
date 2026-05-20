@@ -50,6 +50,7 @@ export default function TimerScreen() {
   const accentColor = getPhaseColor(phase, secondsRemaining, config.warningTime);
   const isComplete = phase === 'complete';
   const isIdle = phase === 'idle';
+  const primaryButtonBg = !isRunning && !isComplete ? Colors.primary : accentColor;
 
   return (
     <View style={styles.container}>
@@ -73,18 +74,34 @@ export default function TimerScreen() {
           </View>
         ) : (
           <View style={styles.centerBlock}>
-            {(phase === 'work' || phase === 'rest') && (
-              <Text style={styles.roundText}>
-                {currentRound}
-                <Text style={styles.roundTotal}> / {totalRounds}</Text>
-              </Text>
-            )}
             <CountdownRing
               secondsRemaining={secondsRemaining}
               totalPhaseDuration={timer.originalPhaseDuration}
-              color={accentColor}
+              color={Colors.primary}
               label={getPhaseLabel(phase)}
             />
+            {totalRounds > 0 && (
+              <View style={styles.dotsRow}>
+                {Array.from({length: totalRounds}, (_, i) => {
+                  const n = i + 1;
+                  const isDone = n < currentRound || isComplete;
+                  const isCurrent = n === currentRound && !isComplete;
+                  return (
+                    <View
+                      key={n}
+                      style={[
+                        styles.dot,
+                        isDone
+                          ? styles.dotDone
+                          : isCurrent
+                          ? styles.dotCurrent
+                          : null,
+                      ]}
+                    />
+                  );
+                })}
+              </View>
+            )}
           </View>
         )}
         </View>
@@ -93,7 +110,7 @@ export default function TimerScreen() {
         <View style={styles.controls}>
           {/* Primary action: Start / Pause / Resume / Go Again */}
           <TouchableOpacity
-            style={[styles.primaryButton, {backgroundColor: accentColor}]}
+            style={[styles.primaryButton, {backgroundColor: primaryButtonBg}]}
             onPress={handleToggleRunning}
             activeOpacity={0.8}>
             <Text style={styles.primaryButtonText}>
@@ -228,6 +245,30 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     ...Typography.h2,
     letterSpacing: 4,
+  },
+  // Round progress dots
+  dotsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: Spacing.sm,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.grey800,
+    borderWidth: 1,
+    borderColor: Colors.grey600,
+  },
+  dotCurrent: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  dotDone: {
+    backgroundColor: Colors.grey400,
+    borderColor: Colors.grey400,
   },
   secondaryButton: {
     borderWidth: 1,
