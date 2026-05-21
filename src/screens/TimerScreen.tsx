@@ -1,5 +1,5 @@
-import React from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Colors, Spacing, Typography} from '../constants';
 import {useTimer} from '../hooks/useTimer';
@@ -52,6 +52,18 @@ export default function TimerScreen() {
   const isIdle = phase === 'idle';
   const primaryButtonBg = !isRunning && !isComplete ? Colors.primary : accentColor;
 
+  // GIF: idle_base preloaded behind transform_base; show idle after 5 s
+  const [showIdleGif, setShowIdleGif] = useState(false);
+  useEffect(() => {
+    if (phase !== 'prep') {
+      setShowIdleGif(false);
+      return;
+    }
+    setShowIdleGif(false);
+    const switchTimer = setTimeout(() => setShowIdleGif(true), 5000);
+    return () => clearTimeout(switchTimer);
+  }, [phase]);
+
   return (
     <View style={styles.container}>
       {/* Phase accent bar at top */}
@@ -100,6 +112,26 @@ export default function TimerScreen() {
                     />
                   );
                 })}
+              </View>
+            )}
+            {phase === 'prep' && (
+              <View style={styles.gifContainer}>
+                {/* idle_base always mounted during prep — preloaded and looping behind */}
+                <Image
+                  // eslint-disable-next-line @typescript-eslint/no-require-imports
+                  source={require('../../assets/idle_base.gif')}
+                  style={[styles.gifImage, StyleSheet.absoluteFill]}
+                  resizeMode="contain"
+                />
+                {/* transform_base overlaid on top; removed once it finishes */}
+                {!showIdleGif && (
+                  <Image
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
+                    source={require('../../assets/transform_base.gif')}
+                    style={styles.gifImage}
+                    resizeMode="contain"
+                  />
+                )}
               </View>
             )}
           </View>
@@ -183,7 +215,7 @@ const styles = StyleSheet.create({
   // Center block
   centerBlock: {
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.lg,
   },
   roundRow: {
     alignItems: 'center',
@@ -246,6 +278,19 @@ const styles = StyleSheet.create({
     ...Typography.h2,
     letterSpacing: 4,
   },
+  // Prep GIF
+  gifContainer: {
+    height: 160,
+    alignSelf: 'stretch',
+    backgroundColor: '#0a1020',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  gifImage: {
+    width: '100%',
+    height: '100%',
+  },
+
   // Round progress dots
   dotsRow: {
     flexDirection: 'row',
