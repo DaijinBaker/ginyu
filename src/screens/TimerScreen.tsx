@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
-import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import Video, {ResizeMode} from 'react-native-video';
 import {useNavigation} from '@react-navigation/native';
 import {Colors, Spacing, Typography} from '../constants';
 import {useTimer} from '../hooks/useTimer';
@@ -40,6 +41,42 @@ function getPhaseLabel(phase: TimerPhase): string {
   }
 }
 
+// ── Round GIF assets ─────────────────────────────────────────────────────────
+
+const ROUND_CHARS = ['ssj', 'ssj2', 'ssj3', 'ssgod', 'ssb', 'ssbk', 'ssui'] as const;
+type RoundChar = (typeof ROUND_CHARS)[number];
+
+/** Duration in ms of each transform GIF (used to time the overlay removal) */
+const TRANSFORM_DURATIONS_MS: Record<Exclude<RoundChar, 'ssj3'>, number> = {
+  ssj: 6000,
+  ssj2: 8000,
+  ssgod: 10000,
+  ssb: 5000,
+  ssbk: 24000,
+  ssui: 172860,
+};
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const IDLE_GIFS: Record<RoundChar, ImageSourcePropType> = {
+  ssj: require('../../assets/idle_ssj.gif'),
+  ssj2: require('../../assets/idle_ssj2.gif'),
+  ssj3: require('../../assets/idle_ssj3.gif'),
+  ssgod: require('../../assets/idle_ssgod.gif'),
+  ssb: require('../../assets/idle_ssb.gif'),
+  ssbk: require('../../assets/idle_ssbk.gif'),
+  ssui: require('../../assets/idle_ssui.gif'),
+};
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const TRANSFORM_GIFS: Record<Exclude<RoundChar, 'ssj3'>, ImageSourcePropType> = {
+  ssj: require('../../assets/transform_ssj.gif'),
+  ssj2: require('../../assets/transform_ssj2.gif'),
+  ssgod: require('../../assets/transform_ssgod.gif'),
+  ssb: require('../../assets/transform_ssb.gif'),
+  ssbk: require('../../assets/transform_ssbk.gif'),
+  ssui: require('../../assets/transform_ssui.gif'),
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function TimerScreen() {
@@ -52,7 +89,7 @@ export default function TimerScreen() {
   const isIdle = phase === 'idle';
   const primaryButtonBg = !isRunning && !isComplete ? Colors.primary : accentColor;
 
-  // GIF: idle_base preloaded behind transform_base; show idle after 5 s
+  // Prep GIF: idle_base preloaded behind transform_base; show idle after 5 s
   const [showIdleGif, setShowIdleGif] = useState(false);
   useEffect(() => {
     if (phase !== 'prep') {
@@ -63,6 +100,37 @@ export default function TimerScreen() {
     const switchTimer = setTimeout(() => setShowIdleGif(true), 5000);
     return () => clearTimeout(switchTimer);
   }, [phase]);
+
+  // Round GIF: idle_ss* preloaded behind transform; idle persists through rest
+  const [showRoundIdleGif, setShowRoundIdleGif] = useState(false);
+  const [ssj3VideoDuration, setSsj3VideoDuration] = useState<number | null>(null);
+  const roundChar: RoundChar =
+    ROUND_CHARS[Math.max(0, currentRound - 1) % ROUND_CHARS.length];
+  const ssj3VideoRate =
+    ssj3VideoDuration && config.roundDuration > 0
+      ? Math.max(1, ssj3VideoDuration / config.roundDuration)
+      : 1;
+
+  useEffect(() => {
+    if (phase === 'rest') {
+      return; // idle gif persists through rest, keep state as-is
+    }
+    if (phase !== 'work') {
+      setShowRoundIdleGif(false);
+      return;
+    }
+    setShowRoundIdleGif(false);
+    if (roundChar === 'ssj3') {
+      return; // Video onEnd handles the switch
+    }
+    const rawMs = TRANSFORM_DURATIONS_MS[roundChar as Exclude<RoundChar, 'ssj3'>];
+    const capMs = Math.max(
+      1000,
+      Math.min(rawMs, config.roundDuration * 1000 - 2000),
+    );
+    const t = setTimeout(() => setShowRoundIdleGif(true), capMs);
+    return () => clearTimeout(t);
+  }, [phase, currentRound, roundChar, config.roundDuration]);
 
   return (
     <View style={styles.container}>
@@ -128,6 +196,37 @@ export default function TimerScreen() {
                   <Image
                     // eslint-disable-next-line @typescript-eslint/no-require-imports
                     source={require('../../assets/transform_base.gif')}
+                    style={styles.gifImage}
+                    resizeMode="contain"
+                  />
+                )}
+              </View>
+            )}
+            {(phase === 'work' || phase === 'rest') && (
+              <View style={styles.gifContainer}>
+                {/* Idle loops behind — preloaded, zero switch latency */}
+                <Image
+                  source={IDLE_GIFS[roundChar]}
+                  style={[styles.gifImage, StyleSheet.absoluteFill]}
+                  resizeMode="contain"
+                />
+                {/* SSJ3: video transform, rate auto-adjusted to fit round duration */}
+                {!showRoundIdleGif && roundChar === 'ssj3' && (
+                  <Video
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
+                    source={require('../../assets/transform_ssj3.mp4')}
+                    style={styles.gifImage}
+                    resizeMode={ResizeMode.CONTAIN}
+                    repeat={false}
+                    rate={ssj3VideoRate}
+                    onEnd={() => setShowRoundIdleGif(true)}
+                    onLoad={data => setSsj3VideoDuration(data.duration)}
+                  />
+                )}
+                {/* All other rounds: GIF transform overlaid on top */}
+                {!showRoundIdleGif && roundChar !== 'ssj3' && (
+                  <Image
+                    source={TRANSFORM_GIFS[roundChar as Exclude<RoundChar, 'ssj3'>]}
                     style={styles.gifImage}
                     resizeMode="contain"
                   />
