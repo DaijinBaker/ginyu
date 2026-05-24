@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import Video, {ResizeMode} from 'react-native-video';
 import {useNavigation} from '@react-navigation/native';
@@ -103,13 +103,10 @@ export default function TimerScreen() {
 
   // Round GIF: idle_ss* preloaded behind transform; idle persists through rest
   const [showRoundIdleGif, setShowRoundIdleGif] = useState(false);
-  const [ssj3VideoDuration, setSsj3VideoDuration] = useState<number | null>(null);
+  // Guard against stale onEnd firing when Video unmounts between rounds
+  const videoActiveRef = useRef(false);
   const roundChar: RoundChar =
     ROUND_CHARS[Math.max(0, currentRound - 1) % ROUND_CHARS.length];
-  const ssj3VideoRate =
-    ssj3VideoDuration && config.roundDuration > 0
-      ? Math.max(1, ssj3VideoDuration / config.roundDuration)
-      : 1;
 
   useEffect(() => {
     if (phase === 'rest') {
@@ -121,7 +118,19 @@ export default function TimerScreen() {
     }
     setShowRoundIdleGif(false);
     if (roundChar === 'ssj3') {
-      return; // Video onEnd handles the switch
+      videoActiveRef.current = true;
+      // Safety timeout: switch to idle if video fails to fire onEnd
+      const capMs = Math.max(
+        1000,
+        Math.min(30000, config.roundDuration * 1000 - 2000),
+      );
+      const t = setTimeout(() => {
+        if (videoActiveRef.current) setShowRoundIdleGif(true);
+      }, capMs);
+      return () => {
+        videoActiveRef.current = false;
+        clearTimeout(t);
+      };
     }
     const rawMs = TRANSFORM_DURATIONS_MS[roundChar as Exclude<RoundChar, 'ssj3'>];
     const capMs = Math.max(
@@ -184,15 +193,14 @@ export default function TimerScreen() {
             )}
             {phase === 'prep' && (
               <View style={styles.gifContainer}>
-                {/* idle_base always mounted during prep — preloaded and looping behind */}
-                <Image
-                  // eslint-disable-next-line @typescript-eslint/no-require-imports
-                  source={require('../../assets/idle_base.gif')}
-                  style={[styles.gifImage, StyleSheet.absoluteFill]}
-                  resizeMode="contain"
-                />
-                {/* transform_base overlaid on top; removed once it finishes */}
-                {!showIdleGif && (
+                {showIdleGif ? (
+                  <Image
+                    // eslint-disable-next-line @typescript-eslint/no-require-imports
+                    source={require('../../assets/idle_base.gif')}
+                    style={styles.gifImage}
+                    resizeMode="contain"
+                  />
+                ) : (
                   <Image
                     // eslint-disable-next-line @typescript-eslint/no-require-imports
                     source={require('../../assets/transform_base.gif')}
@@ -204,28 +212,29 @@ export default function TimerScreen() {
             )}
             {(phase === 'work' || phase === 'rest') && (
               <View style={styles.gifContainer}>
-                {/* Idle loops behind — preloaded, zero switch latency */}
-                <Image
-                  source={IDLE_GIFS[roundChar]}
-                  style={[styles.gifImage, StyleSheet.absoluteFill]}
-                  resizeMode="contain"
-                />
-                {/* SSJ3: video transform, rate auto-adjusted to fit round duration */}
-                {!showRoundIdleGif && roundChar === 'ssj3' && (
+                {showRoundIdleGif ? (
+                  <Image
+                    source={IDLE_GIFS[roundChar]}
+                    style={styles.gifImage}
+                    resizeMode="contain"
+                  />
+                ) : roundChar === 'ssj3' ? (
                   <Video
+                    key={currentRound}
                     // eslint-disable-next-line @typescript-eslint/no-require-imports
                     source={require('../../assets/transform_ssj3.mp4')}
                     style={styles.gifImage}
                     resizeMode={ResizeMode.CONTAIN}
                     repeat={false}
-                    rate={ssj3VideoRate}
-                    onEnd={() => setShowRoundIdleGif(true)}
-                    onLoad={data => setSsj3VideoDuration(data.duration)}
+                    paused={false}
+                    rate={1}
+                    onEnd={() => {
+                      if (videoActiveRef.current) setShowRoundIdleGif(true);
+                    }}
                   />
-                )}
-                {/* All other rounds: GIF transform overlaid on top */}
-                {!showRoundIdleGif && roundChar !== 'ssj3' && (
+                ) : (
                   <Image
+                    key={currentRound}
                     source={TRANSFORM_GIFS[roundChar as Exclude<RoundChar, 'ssj3'>]}
                     style={styles.gifImage}
                     resizeMode="contain"
