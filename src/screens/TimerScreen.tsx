@@ -52,8 +52,8 @@ const TRANSFORM_DURATIONS_MS: Record<Exclude<RoundChar, 'ssj3'>, number> = {
   ssj2: 8000,
   ssgod: 10000,
   ssb: 5000,
-  ssbk: 24000,
-  ssui: 172860,
+  ssbk: 23000, // single play is 24000ms
+  ssui: 8000, // Part 1 animation is 4580ms; extra time lets the reveal frame show before idle
 };
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -81,7 +81,7 @@ const TRANSFORM_GIFS: Record<Exclude<RoundChar, 'ssj3'>, ImageSourcePropType> = 
 
 export default function TimerScreen() {
   const navigation = useNavigation();
-  const {timer, config, handleToggleRunning, handleReset} = useTimer();
+  const {timer, config, handleToggleRunning, handleReset, handleSkip} = useTimer();
   const {phase, secondsRemaining, currentRound, totalRounds, isRunning} = timer;
 
   const accentColor = getPhaseColor(phase, secondsRemaining, config.warningTime);
@@ -263,6 +263,16 @@ export default function TimerScreen() {
                 : 'RESUME'}
             </Text>
           </TouchableOpacity>
+
+          {/* Skip — shown during active phases */}
+          {!isIdle && !isComplete && (
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handleSkip}
+              activeOpacity={0.8}>
+              <Text style={styles.secondaryButtonText}>SKIP</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Reset — shown while a session is active */}
           {!isIdle && (

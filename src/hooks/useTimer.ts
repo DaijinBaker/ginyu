@@ -110,6 +110,7 @@ export function useTimer() {
   const handlePause = () => dispatch(pause());
   const handleResume = () => dispatch(resume(Date.now()));
   const handleReset = () => dispatch(reset());
+  const handleSkip = () => dispatch(advancePhase({...configRef.current, now: Date.now()}));
 
   const handleToggleRunning = () => {
     if (timer.phase === 'idle' || timer.phase === 'complete') {
@@ -128,6 +129,7 @@ export function useTimer() {
     handlePause,
     handleResume,
     handleReset,
+    handleSkip,
     handleToggleRunning,
   };
 }
