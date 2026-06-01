@@ -105,6 +105,8 @@ export default function TimerScreen() {
   const [showRoundIdleGif, setShowRoundIdleGif] = useState(false);
   // Guard against stale onEnd firing when Video unmounts between rounds
   const videoActiveRef = useRef(false);
+  // SSJ3 video: rate is calculated once onLoad fires, scaled so video ends ~2s before round
+  const [ssj3VideoRate, setSsj3VideoRate] = useState(1);
   const roundChar: RoundChar =
     ROUND_CHARS[Math.max(0, currentRound - 1) % ROUND_CHARS.length];
 
@@ -117,6 +119,7 @@ export default function TimerScreen() {
       return;
     }
     setShowRoundIdleGif(false);
+    setSsj3VideoRate(1); // reset rate; onLoad will recalculate for this round
     if (roundChar === 'ssj3') {
       videoActiveRef.current = true;
       // Safety timeout: switch to idle if video fails to fire onEnd
@@ -193,41 +196,48 @@ export default function TimerScreen() {
             )}
             {phase === 'prep' && (
               <View style={styles.gifContainer}>
-                {showIdleGif ? (
-                  <Image
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
-                    source={require('../../assets/idle_base.gif')}
-                    style={styles.gifImage}
-                    resizeMode="contain"
-                  />
-                ) : (
-                  <Image
-                    // eslint-disable-next-line @typescript-eslint/no-require-imports
-                    source={require('../../assets/transform_base.gif')}
-                    style={styles.gifImage}
-                    resizeMode="contain"
-                  />
-                )}
+                {/* Idle is always-visible base layer in normal flow */}
+                <Image
+                  // eslint-disable-next-line @typescript-eslint/no-require-imports
+                  source={require('../../assets/idle_base.gif')}
+                  style={styles.gifImage}
+                  resizeMode="contain"
+                />
+                {/* Transform sits on top (absoluteFill, rendered last = Fresco top layer) */}
+                <Image
+                  // eslint-disable-next-line @typescript-eslint/no-require-imports
+                  source={require('../../assets/transform_base.gif')}
+                  style={[styles.gifImageAbsolute, {opacity: showIdleGif ? 0 : 1}]}
+                  resizeMode="contain"
+                />
               </View>
             )}
             {(phase === 'work' || phase === 'rest') && (
               <View style={styles.gifContainer}>
-                {showRoundIdleGif ? (
-                  <Image
-                    source={IDLE_GIFS[roundChar]}
-                    style={styles.gifImage}
-                    resizeMode="contain"
-                  />
-                ) : roundChar === 'ssj3' ? (
+                {/* Idle is always-visible base layer in normal flow */}
+                <Image
+                  source={IDLE_GIFS[roundChar]}
+                  style={styles.gifImage}
+                  resizeMode="contain"
+                />
+                {/* Transform sits on top (absoluteFill, rendered last = Fresco top layer) */}
+                {roundChar === 'ssj3' ? (
                   <Video
                     key={currentRound}
                     // eslint-disable-next-line @typescript-eslint/no-require-imports
                     source={require('../../assets/transform_ssj3.mp4')}
-                    style={styles.gifImage}
+                    style={[styles.gifImageAbsolute, {opacity: showRoundIdleGif ? 0 : 1}]}
                     resizeMode={ResizeMode.CONTAIN}
                     repeat={false}
                     paused={false}
-                    rate={1}
+                    rate={ssj3VideoRate}
+                    onLoad={({duration}: {duration: number}) => {
+                      if (duration > 0 && config.roundDuration > 2) {
+                        const targetSecs = config.roundDuration - 2;
+                        const computed = duration / targetSecs;
+                        setSsj3VideoRate(Math.max(1, Math.min(3, computed)));
+                      }
+                    }}
                     onEnd={() => {
                       if (videoActiveRef.current) setShowRoundIdleGif(true);
                     }}
@@ -236,7 +246,7 @@ export default function TimerScreen() {
                   <Image
                     key={currentRound}
                     source={TRANSFORM_GIFS[roundChar as Exclude<RoundChar, 'ssj3'>]}
-                    style={styles.gifImage}
+                    style={[styles.gifImageAbsolute, {opacity: showRoundIdleGif ? 0 : 1}]}
                     resizeMode="contain"
                   />
                 )}
@@ -405,6 +415,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   gifImage: {
+    width: '100%',
+    height: '100%',
+  },
+  gifImageAbsolute: {
+    position: 'absolute',
     width: '100%',
     height: '100%',
   },

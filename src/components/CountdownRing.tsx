@@ -7,10 +7,12 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 const SIZE = 280;
 const STROKE_WIDTH = 16;
-const GLOW_STROKE_WIDTH = STROKE_WIDTH + 14;
+const GLOW_STROKE_WIDTH = STROKE_WIDTH + 6;
 const RADIUS = (SIZE - GLOW_STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 const CENTER = SIZE / 2;
+// Dot cap at 12 o'clock to cover the arc seam
+const DOT_Y = CENTER - RADIUS;
 
 interface Props {
   secondsRemaining: number;
@@ -57,16 +59,7 @@ export default function CountdownRing({
   return (
     <View style={styles.wrapper}>
       <Svg width={SIZE} height={SIZE}>
-        {/* Background track */}
-        <Circle
-          cx={CENTER}
-          cy={CENTER}
-          r={RADIUS}
-          stroke={Colors.grey800}
-          strokeWidth={STROKE_WIDTH}
-          fill="none"
-        />
-        {/* Glow arc — wider, pulsing opacity */}
+        {/* 1. Glow arc — bottom layer, wider, pulsing opacity */}
         <AnimatedCircle
           cx={CENTER}
           cy={CENTER}
@@ -76,12 +69,21 @@ export default function CountdownRing({
           fill="none"
           strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
           strokeDashoffset={dashOffset}
-          strokeLinecap="round"
+          strokeLinecap="butt"
           rotation="-90"
           origin={`${CENTER}, ${CENTER}`}
           opacity={glowAnim}
         />
-        {/* Foreground arc — rotated so it starts at 12 o'clock */}
+        {/* 2. Background track — renders over glow bleed, clips the seam */}
+        <Circle
+          cx={CENTER}
+          cy={CENTER}
+          r={RADIUS}
+          stroke={Colors.grey800}
+          strokeWidth={STROKE_WIDTH}
+          fill="none"
+        />
+        {/* 3. Foreground arc — on top of background track */}
         <Circle
           cx={CENTER}
           cy={CENTER}
@@ -91,9 +93,22 @@ export default function CountdownRing({
           fill="none"
           strokeDasharray={`${CIRCUMFERENCE} ${CIRCUMFERENCE}`}
           strokeDashoffset={dashOffset}
-          strokeLinecap="round"
+          strokeLinecap="butt"
           rotation="-90"
           origin={`${CENTER}, ${CENTER}`}
+        />
+        {/* 4. Dot cap at 12 o'clock — background mask then colored cap to cover full glow bleed */}
+        <Circle
+          cx={CENTER}
+          cy={DOT_Y}
+          r={GLOW_STROKE_WIDTH / 2 + 1}
+          fill={Colors.black}
+        />
+        <Circle
+          cx={CENTER}
+          cy={DOT_Y}
+          r={STROKE_WIDTH / 2}
+          fill={color}
         />
       </Svg>
 
