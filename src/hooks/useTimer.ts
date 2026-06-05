@@ -74,10 +74,9 @@ export function useTimer() {
     if (phase !== prevPhase) {
       if (phase === 'work' || phase === 'rest') {
         // Entering work from prep: start tone
-        // Entering work from rest or rest from work: bell then start
+        // Entering work from rest or rest from work: bell
         if (prevPhase === 'rest' || prevPhase === 'work') {
           playBell();
-          // Slight delay so bell plays first then start tone on next tick
         } else {
           playStart();
         }

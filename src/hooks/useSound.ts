@@ -1,4 +1,4 @@
-import {useEffect, useRef} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 import {Vibration} from 'react-native';
 import Sound from 'react-native-sound';
 
@@ -40,20 +40,20 @@ export function useSound() {
     };
   }, []);
 
-  function playBeep() {
+  const playBeep = useCallback(() => {
     play(sounds.current.beep);
     Vibration.vibrate(60);
-  }
+  }, []);
 
-  function playStart() {
+  const playStart = useCallback(() => {
     play(sounds.current.start);
     Vibration.vibrate([0, 80, 60, 80]);
-  }
+  }, []);
 
-  function playBell() {
+  const playBell = useCallback(() => {
     play(sounds.current.bell);
     Vibration.vibrate(400);
-  }
+  }, []);
 
   return {playBeep, playStart, playBell};
 }

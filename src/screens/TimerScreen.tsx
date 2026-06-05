@@ -4,7 +4,6 @@ import Video, {ResizeMode} from 'react-native-video';
 import {useNavigation} from '@react-navigation/native';
 import {Colors, Spacing, Typography} from '../constants';
 import {useTimer} from '../hooks/useTimer';
-import {formatTime} from '../utils/formatTime';
 import type {TimerPhase} from '../features/timer/timerSlice';
 import CountdownRing from '../components/CountdownRing';
 
@@ -29,13 +28,13 @@ function getPhaseColor(
 function getPhaseLabel(phase: TimerPhase): string {
   switch (phase) {
     case 'prep':
-      return 'GET READY';
+      return 'POWER UP';
     case 'work':
-      return 'ROUND';
+      return 'FIGHT!';
     case 'rest':
-      return 'REST';
+      return 'RECOVER';
     case 'complete':
-      return 'SESSION COMPLETE';
+      return 'VICTORY!';
     default:
       return '';
   }
@@ -146,6 +145,16 @@ export default function TimerScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Full-screen victory background */}
+      {isComplete && (
+        <Image
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
+          source={require('../../assets/EndSession.jpeg')}
+          style={styles.fullScreenImage}
+          resizeMode="cover"
+        />
+      )}
+
       {/* Phase accent bar at top */}
       <View style={[styles.accentBar, {backgroundColor: accentColor}]} />
 
@@ -156,7 +165,6 @@ export default function TimerScreen() {
         <View style={styles.centerWrapper}>
         {isComplete ? (
           <View style={styles.completeContainer}>
-            <Text style={styles.completeIcon}>🥊</Text>
             <Text style={[styles.phaseLabel, {color: accentColor}]}>
               {getPhaseLabel(phase)}
             </Text>
@@ -169,7 +177,7 @@ export default function TimerScreen() {
             <CountdownRing
               secondsRemaining={secondsRemaining}
               totalPhaseDuration={timer.originalPhaseDuration}
-              color={Colors.primary}
+              color={accentColor}
               label={getPhaseLabel(phase)}
             />
             {totalRounds > 0 && (
@@ -265,9 +273,9 @@ export default function TimerScreen() {
             activeOpacity={0.8}>
             <Text style={styles.primaryButtonText}>
               {isIdle
-                ? 'START'
+                ? 'FIGHT!'
                 : isComplete
-                ? 'GO AGAIN'
+                ? 'REMATCH!'
                 : isRunning
                 ? 'PAUSE'
                 : 'RESUME'}
@@ -348,14 +356,6 @@ const styles = StyleSheet.create({
   roundRow: {
     alignItems: 'center',
   },
-  roundText: {
-    ...Typography.h2,
-    textAlign: 'center',
-  },
-  roundTotal: {
-    ...Typography.h3,
-    color: Colors.grey400,
-  },
 
   // Countdown
   phaseLabel: {
@@ -373,23 +373,21 @@ const styles = StyleSheet.create({
     lineHeight: 120,
   },
 
-  // Idle state (unused — kept for style completeness)
-  idleContainer: {
-    alignItems: 'center',
-    gap: Spacing.sm,
-  },
-  idleTitle: {
-    ...Typography.h1,
-    letterSpacing: 8,
-  },
-
   // Complete state
+  fullScreenImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+  },
   completeContainer: {
     alignItems: 'center',
     gap: Spacing.md,
-  },
-  completeIcon: {
-    fontSize: 64,
+    backgroundColor: 'rgba(8, 20, 40, 0.65)',
+    borderRadius: 16,
+    paddingHorizontal: Spacing.xl,
+    paddingVertical: Spacing.lg,
   },
 
   // Controls
@@ -454,6 +452,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: Spacing.md,
     alignItems: 'center',
+    backgroundColor: 'rgba(8, 20, 40, 0.75)',
   },
   secondaryButtonText: {
     ...Typography.label,

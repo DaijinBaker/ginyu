@@ -1,16 +1,16 @@
 export const Colors = {
-  // Brand
-  primary: '#0038a8',
-  primaryDark: '#002880',
+  // Brand — amber gold matching the sun halo
+  primary: '#E8A020',
+  primaryDark: '#B87B10',
 
-  // Neutrals
-  black: '#0a0e1a',
+  // Neutrals — deep teal navy from the artwork
+  black: '#080f1a',
   white: '#FFFFFF',
-  grey100: '#F5F5F5',
-  grey200: '#E0E0E0',
-  grey400: '#5577aa',
-  grey600: '#1e3a5f',
-  grey800: '#111827',
+  grey100: '#F5F0E8',
+  grey200: '#D4B870',
+  grey400: '#C8A060',
+  grey600: '#1e4060',
+  grey800: '#0d1e30',
 
   // Semantic
   success: '#2ECC71',
@@ -18,9 +18,9 @@ export const Colors = {
   danger: '#E74C3C',
 
   // Timer states
-  timerWork: '#0038a8',
+  timerWork: '#E8A020',
   timerRest: '#2ECC71',
-  timerWarning: '#F39C12',
+  timerWarning: '#FF2020',
 } as const;
 
 export type ColorsType = typeof Colors;

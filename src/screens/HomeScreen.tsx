@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  ImageBackground,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -34,11 +35,11 @@ interface SettingItem {
 }
 
 const SETTINGS: SettingItem[] = [
-  {key: 'rounds', label: 'ROUNDS', step: 1, min: 1, max: 20},
-  {key: 'roundDuration', label: 'ROUND', step: 30, min: 30, max: 600},
-  {key: 'restDuration', label: 'REST', step: 15, min: 0, max: 300},
-  {key: 'prepDuration', label: 'PREP', step: 5, min: 0, max: 60},
-  {key: 'warningTime', label: 'WARNING', step: 5, min: 0, max: 60},
+  {key: 'rounds', label: 'BATTLES', step: 1, min: 1, max: 20},
+  {key: 'roundDuration', label: 'ROUND', step: 5, min: 5, max: 600},
+  {key: 'restDuration', label: 'RECOVERY', step: 5, min: 0, max: 300},
+  {key: 'prepDuration', label: 'POWER UP', step: 5, min: 0, max: 60},
+  {key: 'warningTime', label: 'ALERT', step: 5, min: 0, max: 60},
 ];
 
 export default function HomeScreen() {
@@ -57,12 +58,14 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ImageBackground
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      source={require('../../assets/HomeScreen.jpeg')}
+      style={styles.background}
+      resizeMode="cover">
+      <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={Typography.h1}>GINYU</Text>
-        <Text style={[Typography.label, styles.subtitle]}>
-          Boxing &amp; Sparring Timer
-        </Text>
+        <Text style={[Typography.h3, styles.title]}>Hyperbolic Timer</Text>
       </View>
 
       <View style={styles.cards}>
@@ -96,7 +99,7 @@ export default function HomeScreen() {
             navigation.navigate('Timer');
           }}
           activeOpacity={0.8}>
-          <Text style={styles.primaryButtonText}>START</Text>
+          <Text style={styles.primaryButtonText}>FIGHT!</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.resetBtn}
@@ -105,31 +108,39 @@ export default function HomeScreen() {
           <Text style={styles.resetText}>RESET TO DEFAULTS</Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: Colors.black,
+    backgroundColor: 'transparent',
     paddingHorizontal: Spacing.md,
     paddingBottom: Spacing.lg,
   },
   header: {
     alignItems: 'center',
-    paddingTop: Spacing.xl,
+    paddingTop: Spacing.xxl,
     paddingBottom: Spacing.lg,
   },
+  title: {
+    letterSpacing: 2,
+    color: Colors.grey100,
+  },
   subtitle: {
-    marginTop: Spacing.xs,
+    marginTop: Spacing.md,
   },
   cards: {
     flex: 1,
     justifyContent: 'space-evenly',
   },
   card: {
-    backgroundColor: Colors.grey800,
+    backgroundColor: 'rgba(8, 20, 40, 0.72)',
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.grey600,
