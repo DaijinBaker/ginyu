@@ -90,7 +90,9 @@ const timerSlice = createSlice({
         default:
           break;
       }
-      state.phaseStartedAt = now;
+      if (state.phase !== 'complete') {
+        state.phaseStartedAt = now;
+      }
     },
     pause(state) {
       state.isRunning = false;

@@ -124,9 +124,6 @@ export function useTimer() {
   return {
     timer,
     config,
-    handleStart,
-    handlePause,
-    handleResume,
     handleReset,
     handleSkip,
     handleToggleRunning,
