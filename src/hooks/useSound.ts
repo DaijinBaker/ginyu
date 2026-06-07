@@ -2,7 +2,7 @@ import {useCallback, useEffect, useRef} from 'react';
 import {Vibration} from 'react-native';
 import Sound from 'react-native-sound';
 
-Sound.setCategory('Playback');
+Sound.setCategory('Playback', true);
 
 type SoundName = 'beep' | 'start' | 'bell';
 

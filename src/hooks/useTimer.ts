@@ -1,4 +1,6 @@
 import {useEffect, useRef} from 'react';
+import {Platform} from 'react-native';
+import ReactNativeForegroundService from '@supersami/rn-foreground-service';
 import {useAppDispatch, useAppSelector} from './useAppStore';
 import {
   tick,
@@ -11,6 +13,17 @@ import {
 import type {SessionConfig} from '../features/session/sessionSlice';
 import {useSound} from './useSound';
 import type {TimerPhase} from '../features/timer/timerSlice';
+
+// Register the foreground service task at module level (required before start)
+if (Platform.OS === 'android') {
+  ReactNativeForegroundService.register({
+    config: {
+      alert: false,
+      onServiceErrorCallBack: () =>
+        console.warn('Foreground service error'),
+    },
+  });
+}
 
 /**
  * useTimer — drives the countdown engine and exposes controls to the UI.
@@ -103,6 +116,74 @@ export function useTimer() {
     prevPhaseRef.current = phase;
     prevSecondsRef.current = secs;
   }, [timer.phase, timer.secondsRemaining, playBeep, playStart, playBell]);
+
+  // ── Android Foreground Service ────────────────────────────────────────────
+  // Keeps the JS thread alive when the screen is locked so the timer
+  // continues to fire. Notification updates every tick with live countdown.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const {phase, currentRound, totalRounds, secondsRemaining, isRunning} =
+      timer;
+
+    if (phase === 'idle' || phase === 'complete') {
+      if (ReactNativeForegroundService.is_running()) {
+        ReactNativeForegroundService.stop().catch(() => {});
+      }
+      return;
+    }
+
+    const mins = Math.floor(secondsRemaining / 60);
+    const secs = secondsRemaining % 60;
+    const timeStr = `${mins}:${String(secs).padStart(2, '0')}`;
+
+    let phaseLabel: string;
+    let roundInfo = '';
+    if (phase === 'prep') {
+      phaseLabel = 'POWER UP';
+    } else if (phase === 'work') {
+      phaseLabel = 'FIGHT!';
+      roundInfo = `Round ${currentRound}/${totalRounds}  •  `;
+    } else {
+      phaseLabel = 'RECOVER';
+      roundInfo = `Round ${currentRound}/${totalRounds}  •  `;
+    }
+
+    const title = isRunning
+      ? 'Hyperbolic Timer'
+      : 'Hyperbolic Timer (Paused)';
+    const message = `${phaseLabel}  •  ${roundInfo}${timeStr}`;
+
+    const notifConfig = {
+      id: 1,
+      title,
+      message,
+      ServiceType: 'mediaPlayback',
+      icon: 'ic_launcher',
+      importance: 'low',
+      vibration: false,
+    };
+
+    if (ReactNativeForegroundService.is_running()) {
+      ReactNativeForegroundService.update(notifConfig).catch(() => {});
+    } else {
+      ReactNativeForegroundService.start(notifConfig).catch(() => {});
+    }
+  }, [
+    timer.phase,
+    timer.secondsRemaining,
+    timer.currentRound,
+    timer.totalRounds,
+    timer.isRunning,
+  ]);
+
+  // Stop the service if the component unmounts while the timer is active
+  // (e.g. user presses the Android back button mid-session).
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    return () => {
+      ReactNativeForegroundService.stop().catch(() => {});
+    };
+  }, []);
 
   // ── Controls ──────────────────────────────────────────────────────────────
   const handleStart = () => dispatch(startSession({...configRef.current, now: Date.now()}));
