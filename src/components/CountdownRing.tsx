@@ -57,7 +57,12 @@ export default function CountdownRing({
   }, [glowAnim]);
 
   return (
-    <View style={styles.wrapper}>
+    <View
+      style={styles.wrapper}
+      accessible={true}
+      accessibilityLabel={`${label}, ${timeText} remaining`}
+      accessibilityRole="timer"
+    >
       <Svg width={SIZE} height={SIZE}>
         {/* 1. Glow arc — bottom layer, wider, pulsing opacity */}
         <AnimatedCircle

@@ -2,6 +2,7 @@ import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {Colors} from '../constants';
 import type {RootStackParamList} from './types';
+import {navigationRef} from './navigationRef';
 
 import HomeScreen from '../screens/HomeScreen';
 import TimerScreen from '../screens/TimerScreen';

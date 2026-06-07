@@ -1,5 +1,5 @@
 import {useEffect, useRef} from 'react';
-import {Platform} from 'react-native';
+import {AppState, DeviceEventEmitter, Platform} from 'react-native';
 import ReactNativeForegroundService from '@supersami/rn-foreground-service';
 import {useAppDispatch, useAppSelector} from './useAppStore';
 import {
@@ -13,6 +13,7 @@ import {
 import type {SessionConfig} from '../features/session/sessionSlice';
 import {useSound} from './useSound';
 import type {TimerPhase} from '../features/timer/timerSlice';
+import {navigationRef} from '../navigation/navigationRef';
 
 // Register the foreground service task at module level (required before start)
 if (Platform.OS === 'android') {
@@ -62,6 +63,19 @@ export function useTimer() {
 
     return () => clearInterval(interval);
   }, [timer.isRunning, dispatch]);
+
+  // ── Foreground resume drift correction ───────────────────────────────────
+  // When the app returns to the foreground after being backgrounded (screen
+  // lock, app switch), immediately dispatch a tick so the displayed time
+  // snaps to the correct value before the next interval fires.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        dispatch(tick(Date.now()));
+      }
+    });
+    return () => sub.remove();
+  }, [dispatch]);
 
   // ── Phase advancement ─────────────────────────────────────────────────────
   // When secondsRemaining reaches 0 (and we're in an active phase), move on.
@@ -158,7 +172,7 @@ export function useTimer() {
       title,
       message,
       ServiceType: 'mediaPlayback',
-      icon: 'ic_launcher',
+      icon: 'ic_notification',
       importance: 'low',
       vibration: false,
     };
@@ -183,6 +197,17 @@ export function useTimer() {
     return () => {
       ReactNativeForegroundService.stop().catch(() => {});
     };
+  }, []);
+
+  // ── Notification tap → navigate to Timer screen ───────────────────────────
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const sub = DeviceEventEmitter.addListener('notificationClickHandle', () => {
+      if (navigationRef.isReady()) {
+        navigationRef.navigate('Timer');
+      }
+    });
+    return () => sub.remove();
   }, []);
 
   // ── Controls ──────────────────────────────────────────────────────────────

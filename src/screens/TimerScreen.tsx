@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Alert, BackHandler, Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {activateKeepAwakeAsync, deactivateKeepAwake} from 'react-native-keep-awake';
 import Video, {ResizeMode} from 'react-native-video';
 import {useNavigation} from '@react-navigation/native';
 import {Colors, Spacing, Typography} from '../constants';
@@ -87,6 +88,40 @@ export default function TimerScreen() {
   const isComplete = phase === 'complete';
   const isIdle = phase === 'idle';
   const primaryButtonBg = !isRunning && !isComplete ? Colors.primary : accentColor;
+
+  // Keep screen awake while a session is active; release when idle or complete
+  useEffect(() => {
+    if (isRunning) {
+      activateKeepAwakeAsync();
+    } else {
+      deactivateKeepAwake();
+    }
+    return () => deactivateKeepAwake();
+  }, [isRunning]);
+
+  // Intercept Android hardware back button during an active session
+  useEffect(() => {
+    if (isIdle || isComplete) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      Alert.alert(
+        'End session?',
+        'Going back will reset the timer.',
+        [
+          {text: 'Stay', style: 'cancel'},
+          {
+            text: 'End session',
+            style: 'destructive',
+            onPress: () => {
+              handleReset();
+              navigation.goBack();
+            },
+          },
+        ],
+      );
+      return true; // prevent default back behaviour
+    });
+    return () => sub.remove();
+  }, [isIdle, isComplete, handleReset, navigation]);
 
   // Prep GIF: idle_base preloaded behind transform_base; show idle after 5 s
   const [showIdleGif, setShowIdleGif] = useState(false);
