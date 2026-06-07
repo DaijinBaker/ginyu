@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Alert, BackHandler, Image, ImageSourcePropType, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import {activateKeepAwakeAsync, deactivateKeepAwake} from 'react-native-keep-awake';
+import {activateKeepAwake, deactivateKeepAwake} from '@sayem314/react-native-keep-awake';
 import Video, {ResizeMode} from 'react-native-video';
 import {useNavigation} from '@react-navigation/native';
 import {Colors, Spacing, Typography} from '../constants';
@@ -92,7 +92,7 @@ export default function TimerScreen() {
   // Keep screen awake while a session is active; release when idle or complete
   useEffect(() => {
     if (isRunning) {
-      activateKeepAwakeAsync();
+      activateKeepAwake();
     } else {
       deactivateKeepAwake();
     }
