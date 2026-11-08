@@ -194,49 +194,55 @@ export default function TimerScreen() {
       <View style={[styles.accentBar, {backgroundColor: accentColor}]} />
 
       {/* Main content */}
-      <View style={styles.content}>
+      <View style={[styles.content, isIdle && styles.contentIdle]}>
 
-        {/* Centre block — flex:1 so it fills available space and centres its content */}
-        <View style={styles.centerWrapper}>
         {isComplete ? (
-          <View style={styles.completeContainer}>
-            <Text style={[styles.phaseLabel, {color: accentColor}]}>
-              {getPhaseLabel(phase)}
-            </Text>
-            <Text style={Typography.bodySmall}>
-              {totalRounds} rounds completed
-            </Text>
+          /* ── Victory zone: message floats in sky area ───────────────────────── */
+          <View style={styles.victoryZone}>
+            <View style={styles.completeContainer}>
+              <Text style={[styles.phaseLabel, {color: accentColor}]}>
+                {getPhaseLabel(phase)}
+              </Text>
+              <Text style={Typography.bodySmall}>
+                {totalRounds} rounds completed
+              </Text>
+            </View>
           </View>
         ) : (
-          <View style={styles.centerBlock}>
-            <CountdownRing
-              secondsRemaining={secondsRemaining}
-              totalPhaseDuration={timer.originalPhaseDuration}
-              color={accentColor}
-              label={getPhaseLabel(phase)}
-            />
-            {totalRounds > 0 && (
-              <View style={styles.dotsRow}>
-                {Array.from({length: totalRounds}, (_, i) => {
-                  const n = i + 1;
-                  const isDone = n < currentRound || isComplete;
-                  const isCurrent = n === currentRound && !isComplete;
-                  return (
-                    <View
-                      key={n}
-                      style={[
-                        styles.dot,
-                        isDone
-                          ? styles.dotDone
-                          : isCurrent
-                          ? styles.dotCurrent
-                          : null,
-                      ]}
-                    />
-                  );
-                })}
-              </View>
-            )}
+          <>
+            {/* ── Zone 1: Ring + dots — anchored at top ──────────────────────────── */}
+            <View style={styles.topZone}>
+              <CountdownRing
+                secondsRemaining={secondsRemaining}
+                totalPhaseDuration={timer.originalPhaseDuration}
+                color={accentColor}
+                label={getPhaseLabel(phase)}
+              />
+              {totalRounds > 0 && (
+                <View style={styles.dotsRow}>
+                  {Array.from({length: totalRounds}, (_, i) => {
+                    const n = i + 1;
+                    const isDone = n < currentRound || isComplete;
+                    const isCurrent = n === currentRound && !isComplete;
+                    return (
+                      <View
+                        key={n}
+                        style={[
+                          styles.dot,
+                          isDone
+                            ? styles.dotDone
+                            : isCurrent
+                            ? styles.dotCurrent
+                            : null,
+                        ]}
+                      />
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+
+            {/* ── Zone 2: GIF — flex:1, fills all space between ring and buttons ─── */}
             {phase === 'prep' && (
               <View style={styles.gifContainer}>
                 {/* Idle is always-visible base layer in normal flow */}
@@ -273,6 +279,9 @@ export default function TimerScreen() {
                     resizeMode={ResizeMode.CONTAIN}
                     repeat={false}
                     paused={false}
+                    muted={true}
+                    mixWithOthers="mix"
+                    disableFocus={true}
                     rate={ssj3VideoRate}
                     onLoad={({duration}: {duration: number}) => {
                       if (duration > 0 && config.roundDuration > 2) {
@@ -295,11 +304,10 @@ export default function TimerScreen() {
                 )}
               </View>
             )}
-          </View>
+          </>
         )}
-        </View>
 
-        {/* Controls */}
+        {/* ── Zone 3: Controls — always anchored at the bottom ─────────────────── */}
         <View style={styles.controls}>
           {/* Primary action: Start / Pause / Resume / Go Again */}
           <TouchableOpacity
@@ -324,18 +332,6 @@ export default function TimerScreen() {
               onPress={handleSkip}
               activeOpacity={0.8}>
               <Text style={styles.secondaryButtonText}>SKIP</Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Reset — shown while a session is active */}
-          {!isIdle && (
-            <TouchableOpacity
-              style={styles.secondaryButton}
-              onPress={() => {
-                handleReset();
-              }}
-              activeOpacity={0.8}>
-              <Text style={styles.secondaryButtonText}>RESET</Text>
             </TouchableOpacity>
           )}
 
@@ -371,25 +367,32 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.xxxl,
-    paddingBottom: Spacing.xxxl,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: 100,
   },
 
-  // Center wrapper — takes all available space and centres content vertically
-  centerWrapper: {
-    flex: 1,
-    alignItems: 'center',
+  // When idle (no gif): centre the ring + buttons as a group
+  contentIdle: {
     justifyContent: 'center',
+    gap: Spacing.xl,
   },
 
-  // Center block
-  centerBlock: {
+  // Zone 1: ring + dots — size to content, anchored at top, fully independent
+  topZone: {
+    alignSelf: 'stretch',
     alignItems: 'center',
-    gap: Spacing.lg,
+    paddingTop: Spacing.xxxxxl,
+    gap: Spacing.sm,
   },
-  roundRow: {
+
+  // Victory zone (complete state): flex:1 fills space above buttons
+  victoryZone: {
+    flex: 1,
+    alignSelf: 'stretch',
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 100,
   },
 
   // Countdown
@@ -418,20 +421,21 @@ const styles = StyleSheet.create({
   },
   completeContainer: {
     alignItems: 'center',
-    gap: Spacing.md,
+    gap: Spacing.xl,
     backgroundColor: 'rgba(8, 20, 40, 0.65)',
     borderRadius: 16,
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.lg,
   },
 
-  // Controls
+  // Zone 3: Controls
   controls: {
     width: '100%',
     gap: Spacing.md,
+    marginTop: 'auto',
   },
   primaryButton: {
-    borderRadius: 8,
+    borderRadius: 10,
     paddingVertical: Spacing.lg,
     alignItems: 'center',
   },
@@ -439,12 +443,13 @@ const styles = StyleSheet.create({
     ...Typography.h2,
     letterSpacing: 4,
   },
-  // Prep GIF
+  // Zone 2: GIF — fixed height matching actual gif content, independent of ring/buttons
   gifContainer: {
-    height: 160,
+    height: 200,
     alignSelf: 'stretch',
+    marginVertical: Spacing.md,
     backgroundColor: '#0a1020',
-    borderRadius: 8,
+    borderRadius: 10,
     overflow: 'hidden',
   },
   gifImage: {
@@ -463,7 +468,6 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: 6,
-    marginTop: Spacing.sm,
   },
   dot: {
     width: 8,
@@ -484,7 +488,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     borderWidth: 1,
     borderColor: Colors.grey600,
-    borderRadius: 8,
+    borderRadius: 10,
     paddingVertical: Spacing.md,
     alignItems: 'center',
     backgroundColor: 'rgba(8, 20, 40, 0.75)',

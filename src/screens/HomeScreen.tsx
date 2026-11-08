@@ -121,12 +121,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
     paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.lg,
+    paddingBottom: Spacing.xxxl,
   },
   header: {
     alignItems: 'center',
-    paddingTop: Spacing.xxl,
-    paddingBottom: Spacing.lg,
+    paddingTop: Spacing.xl,
+    paddingBottom: Spacing.xs,
   },
   title: {
     letterSpacing: 2,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.grey600,
-    paddingVertical: Spacing.md,
+    paddingVertical: 20,
     paddingHorizontal: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
@@ -152,6 +152,8 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     ...Typography.label,
+    fontSize: 14,
+    letterSpacing: 1.5,
     flex: 1,
   },
   cardValue: {
@@ -166,9 +168,9 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   stepBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 8,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: Colors.grey600,
     alignItems: 'center',
@@ -197,7 +199,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.grey600,
     borderRadius: 8,
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.lg,
     alignItems: 'center',
   },
   resetText: {

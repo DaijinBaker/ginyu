@@ -1,5 +1,10 @@
 import {useEffect, useRef} from 'react';
-import {AppState, DeviceEventEmitter, Platform} from 'react-native';
+import {
+  AppState,
+  DeviceEventEmitter,
+  PermissionsAndroid,
+  Platform,
+} from 'react-native';
 import ReactNativeForegroundService from '@supersami/rn-foreground-service';
 import {useAppDispatch, useAppSelector} from './useAppStore';
 import {
@@ -15,13 +20,23 @@ import {useSound} from './useSound';
 import type {TimerPhase} from '../features/timer/timerSlice';
 import {navigationRef} from '../navigation/navigationRef';
 
+// Circuit breaker shared across the app: once the native foreground service
+// fails to start, stop retrying until the timer returns to idle/complete.
+// Without this, a persistent native failure gets retried once per tick for
+// the rest of the session — real devices rate-limit repeated
+// startForeground() calls and can hard-crash the app well before the JS
+// layer (and its ErrorBoundary) ever sees an error.
+let serviceFailed = false;
+
 // Register the foreground service task at module level (required before start)
 if (Platform.OS === 'android') {
   ReactNativeForegroundService.register({
     config: {
       alert: false,
-      onServiceErrorCallBack: () =>
-        console.warn('Foreground service error'),
+      onServiceErrorCallBack: () => {
+        console.warn('Foreground service error');
+        serviceFailed = true;
+      },
     },
   });
 }
@@ -52,6 +67,15 @@ export function useTimer() {
   // Track previous phase and secondsRemaining for sound triggers
   const prevPhaseRef = useRef<TimerPhase>(timer.phase);
   const prevSecondsRef = useRef<number>(timer.secondsRemaining);
+
+  // Android 13+ requires this to be granted before a foreground service's
+  // notification can post; without it startForeground() can fail natively.
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+    ).catch(() => {});
+  }, []);
 
   // ── Countdown interval ────────────────────────────────────────────────────
   useEffect(() => {
@@ -140,11 +164,14 @@ export function useTimer() {
       timer;
 
     if (phase === 'idle' || phase === 'complete') {
+      serviceFailed = false;
       if (ReactNativeForegroundService.is_running()) {
         ReactNativeForegroundService.stop().catch(() => {});
       }
       return;
     }
+
+    if (serviceFailed) return;
 
     const mins = Math.floor(secondsRemaining / 60);
     const secs = secondsRemaining % 60;
@@ -180,7 +207,9 @@ export function useTimer() {
     if (ReactNativeForegroundService.is_running()) {
       ReactNativeForegroundService.update(notifConfig).catch(() => {});
     } else {
-      ReactNativeForegroundService.start(notifConfig).catch(() => {});
+      ReactNativeForegroundService.start(notifConfig).catch(() => {
+        serviceFailed = true;
+      });
     }
   }, [
     timer.phase,

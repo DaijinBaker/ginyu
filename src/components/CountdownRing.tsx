@@ -5,7 +5,7 @@ import {Colors} from '../constants';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-const SIZE = 280;
+const SIZE = 220;
 const STROKE_WIDTH = 16;
 const GLOW_STROKE_WIDTH = STROKE_WIDTH + 6;
 const RADIUS = (SIZE - GLOW_STROKE_WIDTH) / 2;
@@ -145,10 +145,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   time: {
-    fontSize: 72,
+    fontSize: 56,
     fontWeight: '700',
     color: Colors.white,
     letterSpacing: -2,
-    lineHeight: 80,
+    lineHeight: 64,
   },
 });

@@ -1,6 +1,7 @@
 package com.ginyu
 
 import android.os.Bundle
+import androidx.activity.enableEdgeToEdge
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -10,6 +11,7 @@ class MainActivity : ReactActivity() {
 
   // Required by react-native-screens to prevent fragment restoration issues
   override fun onCreate(savedInstanceState: Bundle?) {
+    enableEdgeToEdge()
     super.onCreate(null)
   }
 

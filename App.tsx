@@ -8,7 +8,6 @@ import {store, persistor} from './src/app/store';
 import RootNavigator from './src/navigation/RootNavigator';
 import {navigationRef} from './src/navigation/navigationRef';
 import ErrorBoundary from './src/components/ErrorBoundary';
-import {Colors} from './src/constants';
 
 export default function App() {
   return (
@@ -17,7 +16,7 @@ export default function App() {
         <PersistGate loading={null} persistor={persistor}>
           <SafeAreaProvider>
             <NavigationContainer ref={navigationRef}>
-              <StatusBar barStyle="light-content" backgroundColor={Colors.black} />
+              <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
               <RootNavigator />
             </NavigationContainer>
           </SafeAreaProvider>
